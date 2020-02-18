@@ -2,6 +2,7 @@ from temboardagent.command import (
     exec_command,
     )
 
+
 def base_cmd(app):
     conf = app.config.backup
     c = [conf.path]

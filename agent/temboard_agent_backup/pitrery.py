@@ -25,7 +25,7 @@ def get_version(app):
     if rc != 0:
         raise UserError
 
-    m = re.match(b'pitrery ([\d.]+)', out.strip())
+    m = re.match(r'pitrery ([\d.]+)', out.strip())
     if m is None:
         raise UserError
 
@@ -68,7 +68,7 @@ def config(app):
     result = []
     with open(app.config.backup.configfile) as c:
         for line in c:
-            if re.match(b'^[^#]', line.strip()):
+            if re.match(r'^[^#]', line.strip()):
                 result.append(line.strip())
     return result
 
@@ -78,8 +78,8 @@ def purge(app):
     logger.debug(' '.join(cmd))
     (rc, out, err) = exec_command(cmd)
     return {'rc': rc,
-            'stdout': out,
-            'stderr': err}
+            'stdout': out.split('\n'),
+            'stderr': err.split('\n')}
 
 
 def backup(config):
@@ -87,10 +87,14 @@ def backup(config):
     logger.debug(' '.join(cmd))
 
     (rc, out, err) = exec_command(cmd)
+    result = {'rc': rc,
+              'stdout': out.split('\n'),
+              'stderr': err.split('\n')}
     logger.debug(out)
     logger.debug(err)
     if rc != 0:
-        raise UserError(err)
+        raise UserError(json.dumps(result))
+    return json.dumps(result)
 
 
 def restore_dry_run(app):
@@ -106,4 +110,3 @@ def restore_dry_run(app):
 
 def restore(config):
     logger.info("Stopping PostgreSQL...")
-
