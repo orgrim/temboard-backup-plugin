@@ -20,8 +20,8 @@ Everything shall be under `/backup`.
 Routes:
 * '' (eg /backup only). GET. report information about the plugin and its configuration 
 * '/config'. GET. report details about the configuration of the backup
-* '/status'. GET. tell if a backup is in progress
-* '/cancel/%taskid'. POST. cancel a backup previously scheduled by /create
+* '/status'. GET. tell if a backup or a purge is in progress
+* '/cancel/%taskid'. POST. cancel a backup previously scheduled by /create or a purge previously scheduled by /purge
 * '/list'. GET. give the list of backups
 * '/purge'. POST. schedule a general purge confirming the retention policy. parameters ?
 * '/create'. POST. schedule a backup. param: datetime

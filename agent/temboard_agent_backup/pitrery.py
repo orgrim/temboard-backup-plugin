@@ -73,13 +73,20 @@ def config(app):
     return result
 
 
-def purge(app):
-    cmd = base_cmd(app.config) + ['purge']
+def purge(config):
+    cmd = base_cmd(config) + ['purge']
     logger.debug(' '.join(cmd))
     (rc, out, err) = exec_command(cmd)
-    return {'rc': rc,
-            'stdout': out.split('\n'),
-            'stderr': err.split('\n')}
+    result = {
+        'rc': rc,
+        'stdout': out.split('\n'),
+        'stderr': err.split('\n')
+    }
+    logger.debug(out)
+    logger.debug(err)
+    if rc != 0:
+        raise UserError(json.dumps(result))
+    return json.dumps(result)
 
 
 def backup(config):
@@ -95,18 +102,3 @@ def backup(config):
     if rc != 0:
         raise UserError(json.dumps(result))
     return json.dumps(result)
-
-
-def restore_dry_run(app):
-    cmd = base_cmd(app.config) + ['restore', '-n']
-    logger.debug(' '.join(cmd))
-    (rc, out, err) = exec_command(cmd)
-    logger.debug(out)
-    logger.debug(err)
-    return {'rc': rc,
-            'stdout': out,
-            'stderr': err}
-
-
-def restore(config):
-    logger.info("Stopping PostgreSQL...")

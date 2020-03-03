@@ -5,10 +5,9 @@ import json
 from temboardagent.routing import RouteSet
 from temboardagent.toolkit.configuration import OptionSpec
 from temboardagent.toolkit.validators import file_
-from temboardagent.types import T_OBJECTNAME
 import datetime
 import os.path
-from pickle import dumps as pickle, loads as unpickle
+from pickle import loads as unpickle
 from temboardagent.errors import HTTPError
 from temboardagent.toolkit import taskmanager
 
@@ -105,6 +104,10 @@ def get_backups_progress(http_context, app):
 
         for i in ['id', 'expire', 'redo_interval']:
             res[i] = task[i]
+
+        # Operation type comes from the name of the worker
+        res['op'] = task['worker_name'].split('_')[0]
+
         task_list.append(res)
     return task_list
 
@@ -152,40 +155,30 @@ def get_backups_list(http_context, app):
 
 @routes.post(b'/purge')
 def post_run_purge(http_context, app):
-    return _BackupTool(app.config.backup.tool).purge(app)
+    dt = datetime.datetime.utcnow()
+    logger.info("Scheduling purge at {}".format(dt))
+
+    return functions.schedule_operation('purge', dt, app.config)
+
+
+@taskmanager.worker(pool_size=1)
+def purge_worker(config):
+    config = unpickle(config)
+    return _BackupTool(config.backup.tool).purge(config)
 
 
 @routes.post(b'/create')
 def post_run_backup(http_context, app):
     dt = datetime.datetime.utcnow()
-    logger.debug(dt)
+    logger.info("Scheduling backup at {}".format(dt))
 
-    try:
-        res = taskmanager.schedule_task(
-            'backup_worker',
-            options={'config': pickle(app.config)},
-            start=dt,
-            listener_addr=str(os.path.join(app.config.temboard.home,
-                                           '.tm.socket')),
-            expire=3600,
-        )
-    except Exception as e:
-        logger.exception(str(e))
-        raise HTTPError(500, "Unable to schedule backup")
-
-    if res.type == taskmanager.MSG_TYPE_ERROR:
-        logger.error(res.content)
-        raise HTTPError(500, "Unable to schedule backup")
-
-    return res.content
+    return functions.schedule_operation('backup', dt, app.config)
 
 
 @taskmanager.worker(pool_size=1)
 def backup_worker(config):
     config = unpickle(config)
     return _BackupTool(config.backup.tool).backup(config)
-
-
 
 
 class BackupPlugin(object):
