@@ -35,21 +35,18 @@ class _BackupTool(object):
 
 @routes.get(b'', check_session=False)
 def get_plugin_info(http_context, app):
-    return {
+    tool_info = _BackupTool(app.config.backup.tool).info(app)
+    info = {
         'plugin': 'backup',
         'version': __version__,
         'configuration': {
-            'tool': app.config.backup.tool,
             'configfile': app.config.backup.configfile,
             'stanza': app.config.backup.stanza,
             'path': app.config.backup.path
             }
         }
-
-
-@routes.get(b'/tool')
-def get_tool_info(http_context, app):
-    return _BackupTool(app.config.backup.tool).info(app)
+    info['configuration'].update(tool_info)
+    return info
 
 
 @routes.get(b'/config')
@@ -189,47 +186,6 @@ def backup_worker(config):
     return _BackupTool(config.backup.tool).backup(config)
 
 
-# Use POST /restore to restore for real
-@routes.post(b'/restore')
-def post_run_restore(http_context, app):
-    dt = datetime.datetime.utcnow()
-
-    try:
-        res = taskmanager.schedule_task(
-            'restore_worker',
-            id='test',
-            options={'config': pickle(app.config)},
-            start=dt,
-            listener_addr=str(os.path.join(app.config.temboard.home,
-                                           '.tm.socket')),
-            expire=0,
-        )
-    except Exception as e:
-        logger.exception(str(e))
-        raise HTTPError(500, "Unable to schedule restore")
-
-    if res.type == taskmanager.MSG_TYPE_ERROR:
-        logger.error(res.content)
-        raise HTTPError(500, "Unable to schedule restore")
-
-    return res.content
-
-
-@taskmanager.worker(pool_size=1)
-def restore_worker(config):
-    config = unpickle(config)
-    return _BackupTool(config.backup.tool).restore(config)
-
-
-# Use GET /restore for a dry run
-@routes.get(b'/restore')
-def get_restore_dry_run(http_context, app):
-    return _BackupTool(app.config.backup.tool).restore_dry_run(app)
-
-
-@routes.get(b'/list/%s' % (T_OBJECTNAME))
-def get_backup_info(http_context, app):
-    pass
 
 
 class BackupPlugin(object):

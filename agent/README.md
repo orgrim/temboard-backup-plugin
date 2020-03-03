@@ -21,11 +21,8 @@ Routes:
 * '' (eg /backup only). GET. report information about the plugin and its configuration 
 * '/config'. GET. report details about the configuration of the backup
 * '/status'. GET. tell if a backup is in progress
+* '/cancel/%taskid'. POST. cancel a backup previously scheduled by /create
 * '/list'. GET. give the list of backups
 * '/purge'. POST. schedule a general purge confirming the retention policy. parameters ?
 * '/create'. POST. schedule a backup. param: datetime
-* '/restore'. POST. schedule a restore. param: target_time? xid?
-* '/%id'. GET. give info about a backup
-* '/%id'. DELETE. remove a backup if possible
-* '/%id/restore'. POST. restore a backup -> recovery_target = immediate 
 
