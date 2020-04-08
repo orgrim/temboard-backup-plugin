@@ -33,7 +33,8 @@ def list_backup_tasks(socket):
     )
 
     for task in tasks:
-        if task['worker_name'] in ('backup_worker', 'purge_worker'):
+        logger.debug(task)
+        if task.worker_name in ('backup_worker', 'purge_worker'):
             task_list.append(task)
 
     return task_list

@@ -65,48 +65,49 @@ def get_backups_progress(http_context, app):
         res = {}
         # Convert datetimes to string to be able to JSONify them in the
         # response
-        res['start_datetime'] = task['start_datetime'].strftime(
+        res['start_datetime'] = task.start_datetime.strftime(
             "%Y-%m-%dT%H:%M:%SZ"
         )
-        if task['stop_datetime'] is not None:
-            res['stop_datetime'] = task['stop_datetime'].strftime(
+        if task.stop_datetime is not None:
+            res['stop_datetime'] = task.stop_datetime.strftime(
                 "%Y-%m-%dT%H:%M:%SZ"
             )
         else:
             res['stop_datetime'] = None
 
         # Make the output look better
-        if task['output'] is not None:
-            output = json.loads(task['output'])
+        if task.output is not None:
+            output = json.loads(task.output)
             res.update(output)
 
         # Make the status code human readable, see taskmanager.py
-        if task['status'] == taskmanager.TASK_STATUS_DEFAULT:
+        if task.status == taskmanager.TASK_STATUS_DEFAULT:
             res['status'] = "TASK_STATUS_DEFAULT"
-        elif task['status'] == taskmanager.TASK_STATUS_SCHEDULED:
+        elif task.status == taskmanager.TASK_STATUS_SCHEDULED:
             res['status'] = "TASK_STATUS_SCHEDULED"
-        elif task['status'] == taskmanager.TASK_STATUS_QUEUED:
+        elif task.status == taskmanager.TASK_STATUS_QUEUED:
             res['status'] = "TASK_STATUS_QUEUED"
-        elif task['status'] == taskmanager.TASK_STATUS_DOING:
+        elif task.status == taskmanager.TASK_STATUS_DOING:
             res['status'] = "TASK_STATUS_DOING"
-        elif task['status'] == taskmanager.TASK_STATUS_DONE:
+        elif task.status == taskmanager.TASK_STATUS_DONE:
             res['status'] = "TASK_STATUS_DONE"
-        elif task['status'] == taskmanager.TASK_STATUS_FAILED:
+        elif task.status == taskmanager.TASK_STATUS_FAILED:
             res['status'] = "TASK_STATUS_FAILED"
-        elif task['status'] == taskmanager.TASK_STATUS_CANCELED:
+        elif task.status == taskmanager.TASK_STATUS_CANCELED:
             res['status'] = "TASK_STATUS_CANCELED"
-        elif task['status'] == taskmanager.TASK_STATUS_ABORTED:
+        elif task.status == taskmanager.TASK_STATUS_ABORTED:
             res['status'] = "TASK_STATUS_ABORTED"
-        elif task['status'] == taskmanager.TASK_STATUS_ABORT:
+        elif task.status == taskmanager.TASK_STATUS_ABORT:
             res['status'] = "TASK_STATUS_ABORT"
         else:
-            res['status'] = task['status']
+            res['status'] = task.status
 
-        for i in ['id', 'expire', 'redo_interval']:
-            res[i] = task[i]
+        res['id'] = task.id
+        res['expire'] = task.expire
+        res['redo_interval'] = task.redo_interval
 
         # Operation type comes from the name of the worker
-        res['op'] = task['worker_name'].split('_')[0]
+        res['op'] = task.worker_name.split('_')[0]
 
         task_list.append(res)
     return task_list
@@ -129,10 +130,10 @@ def post_cancel_backup(http_context, app):
         raise HTTPError(404, "Operation not found in current task list")
 
     # Cancel or abort the task depending on its status
-    if task['status'] < taskmanager.TASK_STATUS_DOING:
+    if task.status < taskmanager.TASK_STATUS_DOING:
         msg = taskmanager.MSG_TYPE_TASK_CANCEL
         response = "cancel signal sent"
-    elif task['status'] == taskmanager.TASK_STATUS_DOING:
+    elif task.status == taskmanager.TASK_STATUS_DOING:
         msg = taskmanager.MSG_TYPE_TASK_ABORT
         response = "abort signal sent"
     else:
