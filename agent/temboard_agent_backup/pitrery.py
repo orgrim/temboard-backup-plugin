@@ -1,6 +1,7 @@
 import json
 import logging
 import re
+from datetime import datetime
 from temboardagent.errors import UserError
 from temboardagent.command import (
     exec_command,
@@ -104,13 +105,20 @@ def list(app):
             if t['location'] is not None:
                 tbs.append(t)
 
+        # Convert the stop time of the backup to a timestamp (seconds from
+        # Epoch)
+        stop_time = datetime.strptime(b['stop_time'], "%Y-%m-%d %H:%M:%S %Z")
+        timestamp = int((stop_time - datetime(1970,1,1)).total_seconds())
+
+        # pitrery only creates full backups so the sizes between db and backup
+        # are the same
         normalized.append({
             'db_size': db_size,
             'backup_size': db_size,
             'stored_db_size': stored_size,
             'stored_backup_size': stored_size,
             'type': 'full',
-            'stop_time': b['stop_time'],
+            'stop_time': timestamp,
             'set': b['directory'],
             'reference': None,
             'tablespaces': tbs
