@@ -57,11 +57,66 @@ def list(app):
     logger.debug(' '.join(cmd))
 
     (rc, out, err) = exec_command(cmd)
-    logger.debug(out)
     if rc != 0:
         return []
-    else:
-        return json.loads(out)
+
+    info = json.loads(out)
+
+    normalized = []
+    for b in info['backups']:
+
+        # Ensure the reported space used for the backup is in bytes. The value
+        # comes from du -sh, so there may be a size suffix to process
+        if re.match(r'\d$', b['space_used']) is not None:
+            stored_size = int(b['space_used'])
+        else:
+            stored_size = int(b['space_used'][0:-1])
+            suffix = b['space_used'][-1]
+
+            candidates = ['K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y']
+            if suffix in candidates:
+                for s in candidates:
+                    stored_size = stored_size * 1024
+                    if suffix == s:
+                        break
+            else:
+                logger.error(
+                    "Could not compute size of the stored backup: "
+                    "invalid value {}".format(b['space_used'])
+                )
+                stored_size = None
+
+        tbs = []
+        db_size = 0
+        for t in b['tablespaces']:
+            # pg_size_unpretty the size of the tablespace from bytes, kB, MB,
+            # GB or TB
+            (tbs_size, unit) = t['size'].split()
+            for u in ['bytes', 'kB', 'MB', 'GB', 'TB']:
+                if unit == u:
+                    break
+                tbs_size = int(tbs_size) * 1024
+
+            db_size = db_size + tbs_size
+            del t['size']
+
+            # Exclude pg_global and pg_default from the output
+            if t['location'] is not None:
+                tbs.append(t)
+
+        normalized.append({
+            'db_size': db_size,
+            'backup_size': db_size,
+            'stored_db_size': stored_size,
+            'stored_backup_size': stored_size,
+            'type': 'full',
+            'stop_time': b['stop_time'],
+            'set': b['directory'],
+            'reference': None,
+            'tablespaces': tbs
+        })
+
+    return normalized
 
 
 def config(app):
