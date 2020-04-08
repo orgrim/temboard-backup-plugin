@@ -52,8 +52,8 @@ def list(app):
     if rc != 0:
         return []
 
-    # The output is a list of stanza, but we have specified it so there shall
-    # be only one element.
+    # The output is a list of stanzas, we have specified the stanza so there
+    # shall be only one element.
     info = json.loads(out)[0]
 
     normalized = []
