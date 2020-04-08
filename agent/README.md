@@ -12,6 +12,8 @@ A `backup` section can be added to temboard-agent.conf
 
 * tool = { pitrery | pgbackrest }
 * configfile = path to the configuration file of the tool
+* path = path to the executable of the tool
+* stanza = stanza to use from the configuration file (pgbackrest only)
 
 ## API
 
@@ -23,6 +25,6 @@ Routes:
 * '/status'. GET. tell if a backup or a purge is in progress
 * '/cancel/%taskid'. POST. cancel a backup previously scheduled by /create or a purge previously scheduled by /purge
 * '/list'. GET. give the list of backups
-* '/purge'. POST. schedule a general purge confirming the retention policy. parameters ?
+* '/purge'. POST. schedule a removal of obsolete backups by the tool
 * '/create'. POST. schedule a backup. param: datetime
 
